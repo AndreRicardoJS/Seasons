@@ -1,0 +1,512 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<!-- 
+ * Seasons v1.3 (Última Atualização: 30/12/2024)
+ *
+ * Descrição: O Seasons é uma aplicação gratuita projetada para facilitar a compreensão
+ * e a visualização das estações do ano. Ele oferece uma interface amigável para explorar
+ * informações sobre as diferentes estações, suas características e como elas mudam ao longo do tempo.
+ * É ideal para usuários que desejam aprender mais sobre as estações de forma prática e eficiente.
+ * 
+ * Filosofia: Inspirado pelos princípios do software livre, o Seasons mantém um compromisso
+ * com a transparência e a acessibilidade. Todo o código está contido em um único arquivo
+ * HTML, sem coleta de dados, permitindo que o usuário tenha controle
+ * total sobre as funcionalidades e possa adaptá-las conforme suas necessidades.
+ * 
+ * Status: Em fase de desenvolvimento, o Seasons oferece funcionalidades completas para desktop,
+ * embora ainda possa apresentar algumas limitações em dispositivos móveis. Sugestões e colaborações
+ * são sempre bem-vindas para sua contínua evolução.
+ * 
+ * Licença: GNU GPLv3 - Consulte https://www.gnu.org/licenses/gpl-3.0.html para mais detalhes.
+ * 
+ * Autor: André Ricardo
+ * 
+ * Contato:
+ * - Github:  https://github.com/AndreRicardoJS/Seasons
+ * Aviso: O uso deste software é por conta e risco do usuário. Recomendamos exportar
+ * os dados regularmente para evitar perdas e garantir a segurança das informações.
+-->
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Estações do Ano</title>
+    <style>
+        body {
+            font-family: 'Helvetica Neue', Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f4f4f4;
+            color: #333;
+            font-size: 90%;
+        }
+
+        h1 {
+            font-size: 2.25em;
+            margin-bottom: 10px;
+            text-align: center;
+        }
+
+        .language-selection,
+        .season-type-selection {
+            position: absolute;
+            top: 10px;
+        }
+
+        .language-selection {
+            right: 10px;
+        }
+
+        .season-type-selection {
+            left: 10px;
+        }
+
+        .date-time {
+            text-align: center;
+            font-size: 1.1em;
+            margin-bottom: 20px;
+        }
+
+        .hemisphere-selection {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 20px;
+        }
+
+        .hemisphere-selection label {
+            margin: 0 10px;
+            font-size: 1.1em;
+            cursor: pointer;
+        }
+
+        .stations-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .station-card {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            margin: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            max-width: 400px;
+            transition: transform 0.2s, box-shadow 0.2s;
+            position: relative;
+        }
+
+        .station-current-badge {
+            position: absolute;
+            top: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 1.1em;
+            color: white;
+            background: #007BFF;
+            padding: 5px 15px;
+            border-radius: 5px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .station-card-content {
+            margin-top: 20px;
+        }
+
+        .station-card h2 {
+            margin: 0 0 10px 0;
+            font-size: 1.6em;
+            color: #007BFF;
+        }
+
+        .station-card p {
+            margin: 5px 0;
+            font-size: 1em;
+        }
+
+        .countdown {
+            font-size: 1.35em;
+            color: #FF5733;
+        }
+
+        .station-emoji {
+            font-size: 2.7em;
+            margin-left: 20px;
+        }
+
+
+        @media (max-width: 768px) {
+            .station-card {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .station-emoji {
+                margin-left: 0;
+                margin-top: 10px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="language-selection">
+        <select id="language-dropdown" onchange="changeLanguage()">
+            <option value="pt">Português</option>
+            <option value="en-GB">English (UK)</option>
+            <option value="en-US">English (US)</option>
+            <option value="es">Español</option>
+            <option value="fr">Français</option>
+            <option value="it">Italiano</option>
+        </select>
+    </div>
+
+    <div class="season-type-selection">
+        <select id="season-type-dropdown" onchange="changeSeasonType()">
+            <option value="astronomical">Astronômica</option>
+            <option value="meteorological">Meteorológica</option>
+        </select>
+    </div>
+
+    <h1 id="title">Estações do Ano</h1>
+    <div class="date-time" id="date-time"></div>
+    <div class="hemisphere-selection">
+        <label>
+            <input type="radio" name="hemisphere" value="south" checked> <span id="south-hemisphere">Hemisfério
+                Sul</span>
+        </label>
+        <label>
+            <input type="radio" name="hemisphere" value="north"> <span id="north-hemisphere">Hemisfério Norte</span>
+        </label>
+    </div>
+    <div class="stations-container" id="stations-container"></div>
+
+
+    <script>
+        const translations = {
+            "pt": {
+                "title": "Estações do Ano",
+                "southHemisphere": "Hemisfério Sul",
+                "northHemisphere": "Hemisfério Norte",
+                "currentSeason": "Estação Atual",
+                "startDate": "Data de Início",
+                "endDate": "Data de Fim",
+                "endsIn": "Termina em",
+                "startsIn": "Começa em",
+                "seasons": {
+                    "spring": "Primavera",
+                    "summer": "Verão",
+                    "autumn": "Outono",
+                    "winter": "Inverno"
+                },
+                "locale": "pt-BR"
+            },
+            "en-GB": {
+                "title": "Seasons of the Year",
+                "southHemisphere": "Southern Hemisphere",
+                "northHemisphere": "Northern Hemisphere",
+                "currentSeason": "Current Season",
+                "startDate": "Start Date",
+                "endDate": "End Date",
+                "endsIn": "Ends in",
+                "startsIn": "Starts in",
+                "seasons": {
+                    "spring": "Spring",
+                    "summer": "Summer",
+                    "autumn": "Autumn",
+                    "winter": "Winter"
+                },
+                "locale": "en-GB"
+            },
+            "en-US": {
+                "title": "Seasons of the Year",
+                "southHemisphere": "Southern Hemisphere",
+                "northHemisphere": "Northern Hemisphere",
+                "currentSeason": "Current Season",
+                "startDate": "Start Date",
+                "endDate": "End Date",
+                "endsIn": "Ends in",
+                "startsIn": "Starts in",
+                "seasons": {
+                    "spring": "Spring",
+                    "summer": "Summer",
+                    "autumn": "Fall",
+                    "winter": "Winter"
+                },
+                "locale": "en-US"
+            },
+            "es": {
+                "title": "Estaciones del Año",
+                "southHemisphere": "Hemisferio Sur",
+                "northHemisphere": "Hemisferio Norte",
+                "currentSeason": "Estación Actual",
+                "startDate": "Fecha de Inicio",
+                "endDate": "Fecha de Fin",
+                "endsIn": "Termina en",
+                "startsIn": "Comienza en",
+                "seasons": {
+                    "spring": "Primavera",
+                    "summer": "Verano",
+                    "autumn": "Otoño",
+                    "winter": "Invierno"
+                },
+                "locale": "es-ES"
+            },
+            "fr": {
+                "title": "Saisons de l'Année",
+                "southHemisphere": "Hémisphère Sud",
+                "northHemisphere": "Hémisphère Nord",
+                "currentSeason": "Saison Actuelle",
+                "startDate": "Date de Début",
+                "endDate": "Date de Fin",
+                "endsIn": "Se termine dans",
+                "startsIn": "Commence dans",
+                "seasons": {
+                    "spring": "Printemps",
+                    "summer": "Été",
+                    "autumn": "Automne",
+                    "winter": "Hiver"
+                },
+                "locale": "fr-FR"
+            },
+            "it": {
+                "title": "Stagioni dell'Anno",
+                "southHemisphere": "Emisfero Sud",
+                "northHemisphere": "Emisfero Nord",
+                "currentSeason": "Stagione Attuale",
+                "startDate": "Data di Inizio",
+                "endDate": "Data di Fine",
+                "endsIn": "Termina in",
+                "startsIn": "Inizia in",
+                "seasons": {
+                    "spring": "Primavera",
+                    "summer": "Estate",
+                    "autumn": "Autunno",
+                    "winter": "Inverno"
+                },
+                "locale": "it-IT"
+            }
+        };
+
+        function changeLanguage() {
+            const selectedLanguage = document.getElementById('language-dropdown').value;
+            setLanguage(selectedLanguage);
+        }
+
+        function changeSeasonType() {
+            const selectedSeasonType = document.getElementById('season-type-dropdown').value;
+            setSeasonType(selectedSeasonType);
+        }
+
+        function setLanguage(language) {
+            const translation = translations[language] || translations["en-GB"];
+            document.getElementById('title').innerText = translation.title;
+            document.getElementById('south-hemisphere').innerText = translation.southHemisphere;
+            document.getElementById('north-hemisphere').innerText = translation.northHemisphere;
+            updateStations(language); // Atualiza as estações com o novo idioma
+        }
+
+        function setSeasonType(seasonType) {
+            currentSeasonType = seasonType;
+            const selectedLanguage = document.getElementById('language-dropdown').value;
+            updateStations(selectedLanguage); // Atualiza as estações com o novo tipo de estação
+        }
+
+        function getAstronomicalDates(year, hemisphere) {
+            const dates = {
+                north: {
+                    spring: { start: new Date(Date.UTC(year, 2, 20)), end: new Date(Date.UTC(year, 5, 20, 23, 59, 59)) },
+                    summer: { start: new Date(Date.UTC(year, 5, 21)), end: new Date(Date.UTC(year, 8, 22, 23, 59, 59)) },
+                    autumn: { start: new Date(Date.UTC(year, 8, 23)), end: new Date(Date.UTC(year, 11, 21, 23, 59, 59)) },
+                    winter: { start: new Date(Date.UTC(year, 11, 22)), end: new Date(Date.UTC(year + 1, 2, 19, 23, 59, 59)) }
+                },
+                south: {
+                    autumn: { start: new Date(Date.UTC(year, 2, 20)), end: new Date(Date.UTC(year, 5, 20, 23, 59, 59)) },
+                    winter: { start: new Date(Date.UTC(year, 5, 21)), end: new Date(Date.UTC(year, 8, 22, 23, 59, 59)) },
+                    spring: { start: new Date(Date.UTC(year, 8, 23)), end: new Date(Date.UTC(year, 11, 21, 23, 59, 59)) },
+                    summer: { start: new Date(Date.UTC(year, 11, 22)), end: new Date(Date.UTC(year + 1, 2, 19, 23, 59, 59)) }
+                }
+            };
+
+            return dates[hemisphere];
+        }
+
+        function getMeteorologicalDates(year, hemisphere) {
+            const dates = {
+                north: {
+                    spring: { start: new Date(Date.UTC(year, 2, 1)), end: new Date(Date.UTC(year, 4, 31, 23, 59, 59)) },
+                    summer: { start: new Date(Date.UTC(year, 5, 1)), end: new Date(Date.UTC(year, 7, 31, 23, 59, 59)) },
+                    autumn: { start: new Date(Date.UTC(year, 8, 1)), end: new Date(Date.UTC(year, 10, 30, 23, 59, 59)) },
+                    winter: { start: new Date(Date.UTC(year, 11, 1)), end: new Date(Date.UTC(year + 1, 1, 28, 23, 59, 59)) } // 28 de fevereiro ajustado
+                },
+                south: {
+                    autumn: { start: new Date(Date.UTC(year, 2, 1)), end: new Date(Date.UTC(year, 4, 31, 23, 59, 59)) },
+                    winter: { start: new Date(Date.UTC(year, 5, 1)), end: new Date(Date.UTC(year, 7, 31, 23, 59, 59)) },
+                    spring: { start: new Date(Date.UTC(year, 8, 1)), end: new Date(Date.UTC(year, 10, 30, 23, 59, 59)) },
+                    summer: { start: new Date(Date.UTC(year, 11, 1)), end: new Date(Date.UTC(year + 1, 1, 28, 23, 59, 59)) } // 28 de fevereiro ajustado
+                }
+            };
+
+            return dates[hemisphere];
+        }
+
+
+        async function getSeasons(year, hemisphere, seasonType) {
+            const data = seasonType === 'meteorological' ? getMeteorologicalDates(year, hemisphere) : getAstronomicalDates(year, hemisphere);
+            const now = new Date();
+
+            // Ajuste para mover a estação passada para o próximo ano
+            for (const key in data) {
+                if (data[key].end < now) {
+                    data[key].start.setFullYear(year + 1);
+                    data[key].end.setFullYear(year + 1);
+                }
+            }
+
+            const seasons = Object.keys(data).map(season => ({
+                key: season,
+                start: data[season].start,
+                end: data[season].end,
+                emoji: season === 'spring' ? '🌸' : season === 'summer' ? '☀️' : season === 'autumn' ? '🍂' : '❄️'
+            }));
+
+            return seasons;
+        }
+
+        let currentHemisphere = 'south';
+        let currentSeasonType = 'astronomical';
+
+        function getCurrentSeason(seasons) {
+            const now = new Date();
+            for (let season of seasons) {
+                if (now >= season.start && now < season.end) {
+                    return season;
+                }
+            }
+            return null;
+        }
+
+        function formatDateTime(date, locale) {
+            return date.toLocaleDateString(locale, { year: 'numeric', month: 'long', day: 'numeric' }) + ' ' + date.toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+        }
+
+        function updateCountdown(elementId, endDate) {
+            const now = new Date();
+            const timeDiff = endDate - now;
+
+            if (timeDiff < 0) {
+                document.getElementById(elementId).innerHTML = `0d 0h 0m 0s`;
+                return;
+            }
+
+            const days = Math.floor(timeDiff / (1000 * 60 * 60 * 24));
+            const hours = Math.floor((timeDiff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+            const minutes = Math.floor((timeDiff % (1000 * 60 * 60)) / (1000 * 60));
+            const seconds = Math.floor((timeDiff % (1000 * 60)) / 1000);
+
+            document.getElementById(elementId).innerHTML = `${days}d ${hours}h ${minutes}m ${seconds}s`;
+        }
+
+        async function updateStations(language) {
+            const now = new Date();
+            const currentYear = now.getFullYear();
+            const stationsContainer = document.getElementById('stations-container');
+            stationsContainer.innerHTML = '';
+
+            const seasons = await getSeasons(currentYear, currentHemisphere, currentSeasonType);
+
+            const currentSeason = getCurrentSeason(seasons);
+
+            seasons.sort((a, b) => {
+                if (now >= a.start && now < a.end) return -1;
+                if (now >= b.start && now < b.end) return 1;
+                return a.start - b.start;
+            });
+
+            const translation = translations[language] || translations["en-GB"];
+            const locale = translation.locale;
+
+            seasons.forEach((season, index) => {
+                const isCurrent = currentSeason && season.start <= now && season.end > now;
+                const stationCard = document.createElement('div');
+                stationCard.className = 'station-card';
+
+                stationCard.innerHTML = `
+                    ${isCurrent ? `<div class="station-current-badge">${translation.currentSeason}</div>` : ''}
+                    <div class="station-card-content">
+                        <h2>${translation.seasons[season.key]}</h2>
+                        <p>${translation.startDate}: ${formatDateTime(season.start, locale)}</p>
+                        <p>${translation.endDate}: ${formatDateTime(season.end, locale)}</p>
+                        <p>${isCurrent ? `${translation.endsIn}:` : `${translation.startsIn}:`} <span id="countdown-${index}" class="countdown" data-enddate="${isCurrent ? season.end.toISOString() : season.start.toISOString()}"></span></p>
+                    </div>
+                    <div class="station-emoji">${season.emoji}</div>
+                `;
+                stationsContainer.appendChild(stationCard);
+
+                if (isCurrent) {
+                    stationCard.scrollIntoView({ behavior: 'smooth' });
+                }
+            });
+
+            seasons.forEach((season, index) => {
+                const countdownElement = document.getElementById(`countdown-${index}`);
+                const endDate = new Date(countdownElement.getAttribute('data-enddate'));
+                updateCountdown(`countdown-${index}`, endDate);
+            });
+        }
+
+        function startCountdown() {
+            setInterval(() => {
+                const stationsContainer = document.getElementById('stations-container');
+                if (stationsContainer.innerHTML) {
+                    const nextSeasons = Array.from(stationsContainer.getElementsByClassName('station-card'));
+                    nextSeasons.forEach((stationCard, index) => {
+                        const countdownElement = stationCard.querySelector('.countdown');
+                        const endDate = new Date(countdownElement.getAttribute('data-enddate'));
+                        updateCountdown(`countdown-${index}`, endDate);
+                    });
+                }
+            }, 1000);
+        }
+
+        function updateDateTime() {
+            const now = new Date();
+            const selectedLanguage = document.getElementById('language-dropdown').value;
+            const locale = translations[selectedLanguage].locale;
+            const dateTimeElement = document.getElementById('date-time');
+            dateTimeElement.innerHTML = now.toLocaleString(locale);
+        }
+
+        function detectLanguage() {
+            const userLang = navigator.language || navigator.userLanguage;
+            const langCode = userLang.split('-')[0];
+            const supportedLanguages = ["pt", "en-GB", "en-US", "es", "fr", "it"];
+            return supportedLanguages.includes(langCode) ? langCode : "en-GB";
+        }
+
+        document.querySelectorAll('input[name="hemisphere"]').forEach(radio => {
+            radio.addEventListener('change', (event) => {
+                currentHemisphere = event.target.value;
+                const selectedLanguage = document.getElementById('language-dropdown').value;
+                updateStations(selectedLanguage);
+            });
+        });
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const initialLanguage = detectLanguage();
+            document.getElementById('language-dropdown').value = initialLanguage;
+            document.getElementById('season-type-dropdown').value = currentSeasonType;
+            setLanguage(initialLanguage);
+            startCountdown();
+            updateDateTime();
+            setInterval(updateDateTime, 1000);
+        });
+    </script>
+
+</body>
+
+</html>
